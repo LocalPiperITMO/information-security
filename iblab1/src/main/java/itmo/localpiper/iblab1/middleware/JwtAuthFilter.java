@@ -1,35 +1,30 @@
 package itmo.localpiper.iblab1.middleware;
 
 
-import jakarta.servlet.FilterChain;
-import jakarta.servlet.ServletException;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
+import java.io.IOException;
+
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
-import itmo.localpiper.iblab1.repo.UserRepository;
 import itmo.localpiper.iblab1.service.JwtService;
-
-import java.io.IOException;
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
 @Component
 public class JwtAuthFilter extends OncePerRequestFilter {
-
     private final JwtService jwtService;
-    private final UserRepository userRepository;
 
-    public JwtAuthFilter(JwtService jwtService, UserRepository userRepository) {
+    public JwtAuthFilter(JwtService jwtService) {
         this.jwtService = jwtService;
-        this.userRepository = userRepository;
     }
 
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
         String path = request.getRequestURI();
-        // Do not filter open endpoints
         return path.startsWith("/auth/");
     }
 
@@ -44,7 +39,6 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             String token = header.substring(7);
             String username = jwtService.validateAndGetUsername(token);
             if (username != null) {
-                // simple Authentication object (no roles here)
                 var auth = new UsernamePasswordAuthenticationToken(username, null, java.util.List.of());
                 SecurityContextHolder.getContext().setAuthentication(auth);
             } else {
@@ -54,7 +48,6 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                 return;
             }
         } else {
-            // no token provided -> unauthorized for protected endpoints
             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
             response.setContentType("application/json");
             response.getWriter().write("{\"error\":\"Missing Authorization header\"}");
