@@ -1,28 +1,29 @@
 package itmo.localpiper.iblab1.api;
 
-import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.*;
 
 import itmo.localpiper.iblab1.repo.UserRepository;
 
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-
-import itmo.localpiper.iblab1.dao.User;
-
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api")
 public class DataController {
+
     @Autowired
-    private UserRepository repo;
+    private UserRepository userRepository;
 
     @GetMapping("/data")
-    public List<User> getUsers(@RequestParam String param) {
-        return repo.findAll();
+    public List<?> getData(Authentication auth) {
+        // jwt validation already done by filter
+        return userRepository.findAll().stream()
+                .map(u -> Map.of("id", u.getId(), "username", u.getLogin()))
+                .collect(Collectors.toList());
     }
-    
 }
+
