@@ -4,7 +4,6 @@ import java.nio.charset.StandardCharsets;
 import java.security.Key;
 import java.util.Date;
 
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import io.jsonwebtoken.Claims;
@@ -17,17 +16,24 @@ public class JwtService {
     private final Key key;
     private final long expirationMs;
 
-    public JwtService(@Value("${app.jwt.secret}") String secret,
-                  @Value("${app.jwt.expiration-ms}") long expirationMs) {
-
-        Key tempKey;
-        try {
-            tempKey = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
-        } catch (IllegalArgumentException e) {
-            throw new IllegalStateException("Invalid JWT secret key configuration", e);
-        }
-        this.key = tempKey;
+    private JwtService(Key key, long expirationMs) {
+        this.key = key;
         this.expirationMs = expirationMs;
+    }
+
+    public static JwtService create(String secret, long expirationMs) {
+        if (secret == null || secret.isEmpty()) {
+            throw new IllegalArgumentException("JWT secret cannot be null or empty");
+        }
+
+        Key key;
+        try {
+            key = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
+        } catch (Exception e) {
+            throw new IllegalArgumentException("Failed to create JWT key", e);
+        }
+
+        return new JwtService(key, expirationMs);
     }
 
 
