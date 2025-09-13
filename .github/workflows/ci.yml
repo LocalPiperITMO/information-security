@@ -25,14 +25,26 @@ jobs:
           cache: maven
 
       - name: Build with Maven
+        working-directory: iblab1
         run: mvn -B clean verify
+        
+      - name: Run SpotBugs with FindSecBugs (SAST)
+        working-directory: iblab1
+        run: mvn com.github.spotbugs:spotbugs-maven-plugin:4.8.3.1:check -Dspotbugs.failOnError=false
 
-      - name: Run OWASP Dependency-Check
+      - name: Upload SpotBugs report (SAST)
+        uses: actions/upload-artifact@v4
+        with:
+          name: spotbugs-report
+          path: iblab1/target/sast.xml
+
+      - name: Run OWASP Dependency-Check (SCA)
+        working-directory: iblab1
         run: mvn org.owasp:dependency-check-maven:check -Dformat=ALL -DfailBuildOnCVSS=7
 
-      - name: Upload Dependency-Check reports
+      - name: Upload Dependency-Check reports (SCA)
         uses: actions/upload-artifact@v4
         with:
           name: dependency-check-report
-          path: target/dependency-check-report
+          path: iblab1/target/dependency-check-report
 
