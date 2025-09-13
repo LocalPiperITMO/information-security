@@ -2,9 +2,9 @@ name: Java CI with Security Checks
 
 on:
   push:
-    branches: [ "master" ]
+    branches: ["master"]
   pull_request:
-    branches: [ "master" ]
+    branches: ["master"]
 
 jobs:
   build:
@@ -12,6 +12,7 @@ jobs:
 
     env:
       JWT_SECRET: ${{ secrets.JWT_SECRET }}
+      SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
 
     steps:
       - name: Checkout repository
@@ -27,24 +28,27 @@ jobs:
       - name: Build with Maven
         working-directory: iblab1
         run: mvn -B clean verify
-        
-      - name: Run SpotBugs with FindSecBugs (SAST)
-        working-directory: iblab1
-        run: mvn com.github.spotbugs:spotbugs-maven-plugin:4.8.3.1:check -Dspotbugs.failOnError=false
 
-      - name: Upload SpotBugs report (SAST)
+      - name: Run SpotBugs (SAST)
+        working-directory: iblab1
+        run: mvn spotbugs:spotbugs
+
+      - name: Upload SpotBugs report (HTML)
         uses: actions/upload-artifact@v4
         with:
           name: spotbugs-report
-          path: iblab1/target/sast.xml
+          path: iblab1/target/spotbugs.html
 
-      - name: Run OWASP Dependency-Check (SCA)
+      - name: Run Snyk test (SCA)
         working-directory: iblab1
-        run: mvn org.owasp:dependency-check-maven:check -Dformat=ALL -DfailBuildOnCVSS=7
+        run: |
+          npm install -g snyk snyk-to-html
+          snyk auth $SNYK_TOKEN
+          snyk test --all-projects --json > snyk-report.json
+          snyk-to-html -i snyk-report.json -o snyk-report.html
 
-      - name: Upload Dependency-Check reports (SCA)
+      - name: Upload Snyk report (HTML)
         uses: actions/upload-artifact@v4
         with:
-          name: dependency-check-report
-          path: iblab1/target/dependency-check-report
-
+          name: snyk-report
+          path: iblab1/snyk-report.html
