@@ -1,5 +1,6 @@
 package itmo.localpiper.iblab1.service;
 
+import java.nio.charset.StandardCharsets;
 import java.security.Key;
 import java.util.Date;
 
@@ -16,10 +17,19 @@ public class JwtService {
     private final Key key;
     private final long expirationMs;
 
-    public JwtService(@Value("${app.jwt.secret}") String secret, @Value("${app.jwt.expiration-ms}") long expirationMs) {
-        this.key = Keys.hmacShaKeyFor(secret.getBytes());
+    public JwtService(@Value("${app.jwt.secret}") String secret,
+                  @Value("${app.jwt.expiration-ms}") long expirationMs) {
+
+        Key tempKey;
+        try {
+            tempKey = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
+        } catch (IllegalArgumentException e) {
+            throw new IllegalStateException("Invalid JWT secret key configuration", e);
+        }
+        this.key = tempKey;
         this.expirationMs = expirationMs;
     }
+
 
     public String generateToken(String username) {
         Date now = new Date();
