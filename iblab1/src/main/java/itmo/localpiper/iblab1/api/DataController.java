@@ -4,6 +4,7 @@ package itmo.localpiper.iblab1.api;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+import org.apache.commons.text.StringEscapeUtils;
 
 import itmo.localpiper.iblab1.repo.UserRepository;
 
@@ -22,7 +23,9 @@ public class DataController {
     public List<?> getData(Authentication auth) {
         // jwt validation already done by filter
         return userRepository.findAll().stream()
-                .map(u -> Map.of("id", u.getId(), "username", u.getLogin()))
+                .map(u -> Map.of("id", 
+                u.getId(), 
+                "username", StringEscapeUtils.escapeHtml4(u.getLogin())))
                 .collect(Collectors.toList());
     }
 }
